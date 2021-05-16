@@ -13,4 +13,4 @@ To run the script:
 Once its done you will be presented with an IPython shell so you could still gather some data about the model and
 predictions.
 
-Also, currently the tweaks I've made in base_tester assume you will be using a cuda device. If not, just use .cpu() where I put .cuda()
+Also, currently the tweak I made in base_tester.py assumes you will be using a cuda device. If not, just use .cpu() where I put .cuda(), on line 136
