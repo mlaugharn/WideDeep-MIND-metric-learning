@@ -171,12 +171,13 @@ if __name__ == '__main__':
     print('made model')
     trainer = Trainer(model, objective="binary", metrics=[EmbeddingAccuracy], custom_loss_function=metric_loss)
     print('fitting...')
+    batch_size = 150
     trainer.fit(
         X_wide=X_wide,
         X_tab=X_tab,
         target=target,
-        n_epochs=5,
-        batch_size=78,
+        n_epochs=10,
+        batch_size=batch_size,
         val_split=None
     )
 
@@ -189,7 +190,7 @@ if __name__ == '__main__':
 
 
     print("Creating tester")
-    tester = testers.GlobalEmbeddingSpaceTester(use_trunk_output=True, dataloader_num_workers=0, accuracy_calculator=AccuracyCalculator(k=3), batch_size=78)
+    tester = testers.GlobalEmbeddingSpaceTester(use_trunk_output=True, dataloader_num_workers=0, accuracy_calculator=AccuracyCalculator(k=3), batch_size=batch_size)
 
     class HackyDict(dict):
         # allows dataset[i] -> {"X_wide": X_wide[i], "X_tab": X_tab[i]} for dataloader problem
@@ -223,8 +224,9 @@ if __name__ == '__main__':
     dataset_dict = {"train": DS(X_wide, X_tab, target), "val": DS(X_wide_te, X_tab_te, test_target)}
     print("made dataset_dict")
     print("computing accuracies...")
-    all_accuracies = tester.test(dataset_dict, epoch = 0, trunk_model = model)
-    print(f"computed  accuracies: {all_accuracies}")
+    torch.cuda.empty_cache()
+    # all_accuracies = tester.test(dataset_dict, epoch = 0, trunk_model = model)
+    # print(f"computed  accuracies: {all_accuracies}")
     
     print("computing embeddings...")
     train_embeddings, train_labels = tester.get_all_embeddings(
@@ -236,6 +238,9 @@ if __name__ == '__main__':
         dataset_dict['val'],
         trunk_model = model, 
     )
+
+    np.savez('train_emb_labels_test_emb_labels.npz', train_embeddings.cpu().numpy(), train_labels.cpu().numpy(), test_embeddings.cpu().numpy(), test_labels.cpu().numpy())
+
     print("computed embeddings")
 
     from pytorch_metric_learning.utils.inference import InferenceModel, MatchFinder
@@ -273,6 +278,7 @@ if __name__ == '__main__':
     print("found.")
     indices, distances = np.array(indices), np.array(distances)
     preds = df_train.clicked.values[indices]
+    np.savez('indices_dists_preds.npz', indices, distances, preds)
     # impressions_results = {imp_id: [news_id, pos/neg, distance]}
     impression_ranks = {}
     print("ranking impression articles...")
